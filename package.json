@@ -1,0 +1,45 @@
+{
+  "name": "facet-cli",
+  "version": "0.1.0",
+  "description": "comand line interface for facetjs",
+  "keywords": [
+    "comand line interface",
+    "cli",
+    "facetjs"
+  ],
+  "author": {
+    "name": "Vadim Ogievetsky",
+    "url": "http://vadim.ogievetsky.com"
+  },
+  "license": "Apache 2.0",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/facetjs/facet-cli.git"
+  },
+  "main": "build/cli.js",
+  "typescript": {
+    "definition": "build/cli.d.ts"
+  },
+  "scripts": {
+    "prepublish": "./prepublish"
+  },
+  "dependencies": {
+    "facetjs": "0.9.11",
+    "facetjs-druid-requester": "1.0.x",
+    "facetjs-mysql-requester": "1.0.x",
+    "q": "^1.1.2"
+  },
+  "peerDependencies": {
+    "chronology": "0.7.x"
+  },
+  "devDependencies": {
+    "chai": "~1.10.0",
+    "coffee-script": "1.9.0",
+    "mocha": "~2.1.x",
+    "typescript": "~1.4.x",
+    "underscore": "~1.7.0"
+  },
+  "bin": {
+    "facet": "build/cli.js"
+  }
+}

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+rm -rf build/*
+mkdir -p build
+
+node_modules/.bin/tsc --module commonjs --noImplicitAny --noEmitOnError --declaration --removeComments --outDir build src/*
