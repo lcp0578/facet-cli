@@ -24,9 +24,10 @@
     "prepublish": "./prepublish"
   },
   "dependencies": {
-    "facetjs": "0.9.11",
+    "facetjs": "0.9.12",
     "facetjs-druid-requester": "1.0.x",
     "facetjs-mysql-requester": "1.0.x",
+    "nopt": "^3.0.1",
     "q": "^1.1.2"
   },
   "peerDependencies": {
@@ -40,6 +41,6 @@
     "underscore": "~1.7.0"
   },
   "bin": {
-    "facet": "build/cli.js"
+    "facet": "bin/facet.js"
   }
 }
