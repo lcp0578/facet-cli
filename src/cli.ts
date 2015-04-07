@@ -7,12 +7,21 @@
 
 import Q = require('q');
 import nopt = require("nopt");
+import chronology = require("chronology");
 import facet = require("facetjs");
 import DruidRequester = require('facetjs-druid-requester')
 import druidRequesterFactory = DruidRequester.druidRequesterFactory;
 
+var WallTime = chronology.WallTime;
+if (!WallTime.rules) {
+  var tzData = require("chronology/lib/walltime/walltime-data.js");
+  WallTime.init(tzData.rules, tzData.zones);
+}
+
 var Expression = facet.core.Expression;
 var Dataset = facet.core.Dataset;
+var Duration = chronology.Duration;
+var Timezone = chronology.Timezone;
 
 export function usage() {
   console.log(`
@@ -24,7 +33,6 @@ Usage: facet [options]
   -h,  --host         the host to connect to
   -ds, --data-source  the data source to query
   -s,  --sql          run this SQL query
-       --simulate     simulate this query
 `
   )
 }
@@ -40,7 +48,7 @@ export function run() {
       "data-source": String,
       "help": Boolean,
       "sql": String,
-      "simulate": Boolean,
+      "interval": String,
       "version": Boolean,
       "verbose": Boolean
     },
@@ -48,7 +56,8 @@ export function run() {
       "h": ["--host"],
       "s": ["--sql"],
       "v": ["--verbose"],
-      "ds": ["--data-source"]
+      "ds": ["--data-source"],
+      "i": ["--interval"]
     },
     process.argv
   );
@@ -98,13 +107,27 @@ export function run() {
       return druidRequester(request)
         .then((data) => {
           console.log("vvvvvvvvvvvvvvvvvvvvvvvvvv");
-          console.log("Got back:", JSON.stringify(data, null, 2));
+          console.log("Got result:", JSON.stringify(data, null, 2));
           console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^");
           return data;
         });
     }
   } else {
     requester = druidRequester;
+  }
+
+  var filter: Core.Expression = null;
+  if (parsed['interval']) {
+    try {
+      var now = new Date();
+      var tz = Timezone.UTC();
+      var interval = Duration.fromJS(parsed['interval']);
+      filter = facet('__time').in({ start: interval.move(now, tz, -1), end: now })
+    } catch (e) {
+      console.log("Could not parse interval", parsed['interval']);
+      console.log(e.message);
+      return;
+    }
   }
 
   var context: Core.Datum = {
@@ -114,6 +137,7 @@ export function run() {
       timeAttribute: '__time',
       forceInterval: true,
       approximate: true,
+      filter: filter,
       requester: requester
     })
   };
