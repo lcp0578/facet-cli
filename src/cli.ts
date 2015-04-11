@@ -99,10 +99,31 @@ function parseArgs() {
   );
 }
 
+function wrapVerbose(requester: Requester.FacetRequester<any>): Requester.FacetRequester<any> {
+  return (request: Requester.DatabaseRequest<any>): Q.Promise<any> => {
+    console.log("vvvvvvvvvvvvvvvvvvvvvvvvvv");
+    console.log("Sending query:", JSON.stringify(request.query, null, 2));
+    console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^");
+    return requester(request)
+      .then((data) => {
+        console.log("vvvvvvvvvvvvvvvvvvvvvvvvvv");
+        console.log("Got result:", JSON.stringify(data, null, 2));
+        console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^");
+        return data;
+      });
+  }
+}
+
 export function run() {
   var parsed = parseArgs();
   if (parsed.argv.original.length === 0 || parsed['help']) return usage();
   if (parsed['version']) return version();
+
+  var host: string = parsed['host'];
+  if (!host) {
+    console.log("must have host for now");
+    return;
+  }
 
   var sql: string = parsed['sql'];
   var expression: Expression = null;
@@ -125,12 +146,6 @@ export function run() {
     return;
   }
 
-  var host: string = parsed['host'];
-  if (!host) {
-    console.log("must have host for now");
-    return;
-  }
-
   var druidRequester = druidRequesterFactory({
     host: host,
     timeout: 30000
@@ -138,18 +153,7 @@ export function run() {
 
   var requester: Requester.FacetRequester<any>;
   if (parsed['verbose']) {
-    requester = (request: Requester.DatabaseRequest<any>): Q.Promise<any> => {
-      console.log("vvvvvvvvvvvvvvvvvvvvvvvvvv");
-      console.log("Sending query:", JSON.stringify(request.query, null, 2));
-      console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^");
-      return druidRequester(request)
-        .then((data) => {
-          console.log("vvvvvvvvvvvvvvvvvvvvvvvvvv");
-          console.log("Got result:", JSON.stringify(data, null, 2));
-          console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^");
-          return data;
-        });
-    }
+    requester = wrapVerbose(druidRequester);
   } else {
     requester = druidRequester;
   }
@@ -164,7 +168,7 @@ export function run() {
       return;
     }
 
-    var now = new Date();
+    var now = Chronology.minute.floor(new Date(), Timezone.UTC());
     filter = $('__time').in({ start: interval.move(now, Timezone.UTC(), -1), end: now })
   }
 
