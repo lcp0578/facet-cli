@@ -4,10 +4,10 @@
       <sourceFilesUrls>
         <item url="file://$PROJECT_DIR$/node_modules/chronology/node_modules/higher-object/test/index.mocha.js" />
         <item url="file://$PROJECT_DIR$/node_modules/chronology/test/date_expression.mocha.js" />
-        <item url="file://$PROJECT_DIR$/node_modules/chronology/test/date_math.mocha.js" />
         <item url="file://$PROJECT_DIR$/node_modules/chronology/node_modules/higher-object/test/tester.mocha.js" />
-        <item url="file://$PROJECT_DIR$/node_modules/chronology/test/floor_move_ceil.mocha.js" />
+        <item url="file://$PROJECT_DIR$/node_modules/chronology/test/date_math.mocha.js" />
         <item url="file://$PROJECT_DIR$/node_modules/facetjs/node_modules/higher-object/test/index.mocha.js" />
+        <item url="file://$PROJECT_DIR$/node_modules/chronology/test/floor_move_ceil.mocha.js" />
         <item url="file://$PROJECT_DIR$/node_modules/facetjs/node_modules/higher-object/test/tester.mocha.js" />
         <item url="file://$PROJECT_DIR$/node_modules/chronology/test/overall.mocha.js" />
         <item url="file://$PROJECT_DIR$/node_modules/chronology/test/timezone.mocha.js" />
@@ -18,10 +18,10 @@
     <CLASSES>
       <root url="file://$PROJECT_DIR$/node_modules/chronology/node_modules/higher-object/test/index.mocha.js" />
       <root url="file://$PROJECT_DIR$/node_modules/chronology/test/date_expression.mocha.js" />
-      <root url="file://$PROJECT_DIR$/node_modules/chronology/node_modules/higher-object/test/tester.mocha.js" />
       <root url="file://$PROJECT_DIR$/node_modules/chronology/test/date_math.mocha.js" />
-      <root url="file://$PROJECT_DIR$/node_modules/facetjs/node_modules/higher-object/test/index.mocha.js" />
+      <root url="file://$PROJECT_DIR$/node_modules/chronology/node_modules/higher-object/test/tester.mocha.js" />
       <root url="file://$PROJECT_DIR$/node_modules/chronology/test/floor_move_ceil.mocha.js" />
+      <root url="file://$PROJECT_DIR$/node_modules/facetjs/node_modules/higher-object/test/index.mocha.js" />
       <root url="file://$PROJECT_DIR$/node_modules/facetjs/node_modules/higher-object/test/tester.mocha.js" />
       <root url="file://$PROJECT_DIR$/node_modules/chronology/test/overall.mocha.js" />
       <root url="file://$PROJECT_DIR$/node_modules/chronology/test/timezone.mocha.js" />
