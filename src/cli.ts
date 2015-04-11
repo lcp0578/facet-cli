@@ -9,6 +9,13 @@ import Q = require('q');
 import nopt = require("nopt");
 import chronology = require("chronology");
 import facet = require("facetjs");
+import $ = facet.$;
+import Expression = facet.Expression;
+import RefExpression = facet.RefExpression;
+import ActionsExpression = facet.ActionsExpression;
+import DefAction = facet.DefAction;
+import Datum = facet.Datum;
+import Dataset = facet.Dataset;
 import DruidRequester = require('facetjs-druid-requester')
 import druidRequesterFactory = DruidRequester.druidRequesterFactory;
 
@@ -18,31 +25,56 @@ if (!WallTime.rules) {
   WallTime.init(tzData.rules, tzData.zones);
 }
 
-var Expression = facet.core.Expression;
-var Dataset = facet.core.Dataset;
 var Duration = chronology.Duration;
 var Timezone = chronology.Timezone;
 
-export function usage() {
+function usage() {
   console.log(`
 Usage: facet [options]
 
-       --help         print this help message
-       --version      display the version number
-  -v,  --verbose      display the queries that are being made
-  -h,  --host         the host to connect to
-  -ds, --data-source  the data source to query
-  -s,  --sql          run this SQL query
+      --help         print this help message
+      --version      display the version number
+  -v, --verbose      display the queries that are being made
+  -h, --host         the host to connect to
+  -d, --data-source  use this data source for the query (supersedes FROM clause)
+  -s, --sql          run this SQL query
+  -o, --output       specify the output format. Possible values: json (default), csv
+
+  -a, --allow        enable a behaviour that is turned off by default
+          eternity     allow queries not filtered on time
+          select       allow select queries
 `
   )
 }
 
-export function version() {
-  console.log(`facet version 0.9.14 (cli version 0.1.0)`);
+function version() {
+  console.log(`facet version 0.10.1 (cli version 0.1.0 / alpha)`);
 }
 
-export function run() {
-  var parsed = nopt(
+function getDatasourceName(ex: Expression): string {
+  var name: string = null;
+  ex.some((ex) => {
+    if (ex instanceof ActionsExpression) {
+      var operand = ex.operand;
+      var firstAction = ex.actions[0];
+      if (operand instanceof RefExpression) {
+        name = operand.name;
+        return true;
+      } else if (firstAction instanceof DefAction && firstAction.name === 'data') {
+        var firstActionExpression = firstAction.expression;
+        if (firstActionExpression instanceof RefExpression) {
+          name = firstActionExpression.name;
+          return true;
+        }
+      }
+    }
+    return null;
+  });
+  return name;
+}
+
+function parseArgs() {
+  return nopt(
     {
       "host": String,
       "data-source": String,
@@ -50,24 +82,30 @@ export function run() {
       "sql": String,
       "interval": String,
       "version": Boolean,
-      "verbose": Boolean
+      "verbose": Boolean,
+      "output": String,
+      "allow": [String, Array]
     },
     {
       "h": ["--host"],
       "s": ["--sql"],
       "v": ["--verbose"],
-      "ds": ["--data-source"],
-      "i": ["--interval"]
+      "d": ["--data-source"],
+      "i": ["--interval"],
+      "a": ["--allow"],
+      "o": ["--output"]
     },
     process.argv
   );
+}
 
+export function run() {
+  var parsed = parseArgs();
   if (parsed.argv.original.length === 0 || parsed['help']) return usage();
-
   if (parsed['version']) return version();
 
   var sql: string = parsed['sql'];
-  var expression: Core.Expression = null;
+  var expression: Expression = null;
   if (sql) {
     try {
       expression = Expression.parseSQL(sql)
@@ -81,7 +119,7 @@ export function run() {
     return;
   }
 
-  var dataSource: string = parsed['data-source'];
+  var dataSource = getDatasourceName(expression);
   if (!dataSource) {
     console.log("must have data source");
     return;
@@ -116,31 +154,32 @@ export function run() {
     requester = druidRequester;
   }
 
-  var filter: Core.Expression = null;
+  var filter: Expression = null;
   if (parsed['interval']) {
     try {
-      var now = new Date();
-      var tz = Timezone.UTC();
       var interval = Duration.fromJS(parsed['interval']);
-      filter = facet('__time').in({ start: interval.move(now, tz, -1), end: now })
     } catch (e) {
       console.log("Could not parse interval", parsed['interval']);
       console.log(e.message);
       return;
     }
+
+    var now = new Date();
+    filter = $('__time').in({ start: interval.move(now, Timezone.UTC(), -1), end: now })
   }
 
-  var context: Core.Datum = {
-    data: Dataset.fromJS({
-      source: 'druid',
-      dataSource: dataSource,
-      timeAttribute: '__time',
-      forceInterval: true,
-      approximate: true,
-      filter: filter,
-      requester: requester
-    })
-  };
+  var dataset = Dataset.fromJS({
+    source: 'druid',
+    dataSource: dataSource,
+    timeAttribute: '__time',
+    forceInterval: true,
+    approximate: true,
+    filter: filter,
+    requester: requester
+  });
+
+  var context: Datum = {};
+  context[dataSource] = dataset;
 
   expression.compute(context)
     .then(
