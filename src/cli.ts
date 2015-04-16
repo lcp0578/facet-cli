@@ -175,7 +175,7 @@ export function run() {
       return;
     }
 
-    var now = Chronology.minute.floor(new Date(), Timezone.UTC());
+    var now = chronology.minute.floor(new Date(), Timezone.UTC());
     filter = $('__time').in({ start: interval.move(now, Timezone.UTC(), -1), end: now })
   }
 
