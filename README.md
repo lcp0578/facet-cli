@@ -14,6 +14,8 @@ Currently only queries to Druid are supported. More support will come in the fut
 
 The CLI supports the following options:
 
+Option              | Description
+--------------------|-----------------------------------------
 `--help`            | print this help message
 `--version`         | display the version number
 `-v, --verbose`     | display the queries that are being made
