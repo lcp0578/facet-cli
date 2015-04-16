@@ -1,5 +1,7 @@
 # facet-cli
 
+A command line interface for facet
+
 ## Installation
 
 ```
@@ -19,6 +21,6 @@ Here are some examples of queries
 ### Max time
 
 ```
-facet -h 10.20.30.40 -i P1D -s "SELECT MAX(__time) FROM twitterstream"
+facet -h 10.20.30.40 -s "SELECT MAX(__time) FROM twitterstream"
 ```
 

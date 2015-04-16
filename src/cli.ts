@@ -1,7 +1,6 @@
 /// <reference path="../typings/node/node.d.ts" />
 /// <reference path="../typings/nopt/nopt.d.ts" />
-/// <reference path="../typings/q/Q.d.ts" />
-/// <reference path="../node_modules/facetjs/build/facet.d.ts" />
+/// <reference path="../node_modules/facetjs/build/facetjs.d.ts" />
 /// <reference path="../node_modules/facetjs-druid-requester/build/facetjs-druid-requester.d.ts" />
 "use strict";
 
@@ -48,7 +47,7 @@ Usage: facet [options]
 }
 
 function version() {
-  console.log(`facet version 0.10.1 (cli version 0.1.0 / alpha)`);
+  console.log(`facet version 0.11.1 (cli version 0.1.0 / alpha)`);
 }
 
 function getDatasourceName(ex: Expression): string {
@@ -118,10 +117,18 @@ export function run() {
   var parsed = parseArgs();
   if (parsed.argv.original.length === 0 || parsed['help']) return usage();
   if (parsed['version']) return version();
+  var allow: string[] = parsed['allow'] || [];
+
+  for (var i = 0; i < allow.length; i++) {
+    if (!(allow[i] === 'eternity' || allow[i] === 'select')) {
+      console.log("Unexpected allow", allow[i]);
+      return;
+    }
+  }
 
   var host: string = parsed['host'];
   if (!host) {
-    console.log("must have host for now");
+    console.log("must have host (for now)");
     return;
   }
 
@@ -176,8 +183,8 @@ export function run() {
     source: 'druid',
     dataSource: dataSource,
     timeAttribute: '__time',
-    forceInterval: true,
-    approximate: true,
+    allowEternity: allow.indexOf('eternity') !== -1,
+    allowSelectQueries: allow.indexOf('select') !== -1,
     filter: filter,
     requester: requester
   });
