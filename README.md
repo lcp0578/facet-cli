@@ -168,7 +168,7 @@ Returns:
       "type": "TIME_RANGE"
     }
   },
-  '... results omitted ...'
+  "... results omitted ..."
 ]
 ```
 
