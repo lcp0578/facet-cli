@@ -4,9 +4,13 @@ A command line interface for facet
 
 ## Installation
 
+facet-cli is built on top of node so make sure you have node >= 0.10 installed.
+
 ```
 npm install -g facet-cli
 ```
+
+The global install will make the `facet` command available system wide.
 
 ## Usage
 
@@ -164,7 +168,7 @@ Returns:
       "type": "TIME_RANGE"
     }
   },
-  ...
+  '... results omitted ...'
 ]
 ```
 
