@@ -22,7 +22,7 @@ Option                | Description
 `-h`, `--host`        | the host to connect to
 `-d`, `--data-source` | use this data source for the query (supersedes FROM clause)
 `-i`, `--interval`    | add (AND) a __time filter between NOW-INTERVAL and NOW
-`-s`, `--sql`         | run this SQL query
+`-q`, `--query`       | the query to run
 `-o`, `--output`      | specify the output format. Possible values: `json` **(default)**, `csv`
 `-a`, `--allow`       | enable a behaviour that is turned off by default `eternity` allow queries not filtered on time `select` allow select queries
 
@@ -39,7 +39,7 @@ datasource called `twitterstream` that has tweets in it.
 Here is a simple query that gets the maximum of the `__time` column which tells you what how up to date the data in the database is.
 
 ```
-facet -h 10.20.30.40 -s "SELECT MAX(__time) AS maxTime FROM twitterstream"
+facet -h 10.20.30.40 -q "SELECT MAX(__time) AS maxTime FROM twitterstream"
 ```
 
 Returns:
@@ -60,7 +60,7 @@ Ok now you might want to examine the different hashtags that are trending.
 You might do a group by on the `first_hashtag` column like this:
 
 ```
-facet -h 10.20.30.40 -s "SELECT COUNT() as 'cnt' FROM twitterstream GROUP BY first_hashtag ORDER BY cnt DESC"
+facet -h 10.20.30.40 -q "SELECT COUNT() as 'cnt' FROM twitterstream GROUP BY first_hashtag ORDER BY cnt DESC"
 ```
 
 This will throw an error because there is no time filter specified and the cli guards against this.
@@ -70,9 +70,10 @@ This behaviour can be disabled using the `--allow eternity` flag but it is gener
 Let's try it again, with a time filter this time:
   
 ```
-facet -h 10.20.30.40 -s "
+facet -h 10.20.30.40 -q "
 SELECT
-COUNT() as 'cnt'
+first_hashtag as hashtag,
+COUNT() as cnt
 FROM twitterstream
 WHERE '2015-04-15T00:00:00' <= __time AND __time < '2015-04-16T00:00:00'
 GROUP BY first_hashtag
@@ -80,14 +81,42 @@ ORDER BY cnt DESC
 LIMIT 5
 "
 ```
+
+Results:
+  
+```
+[
+  {
+    "cnt": 3480496,
+    "hashtag": "No Hashtag"
+  },
+  {
+    "cnt": 7691,
+    "hashtag": "FOLLOWTRICK"
+  },
+  {
+    "cnt": 6059,
+    "hashtag": "5YearsSinceNiallsAudition"
+  },
+  {
+    "cnt": 4392,
+    "hashtag": "ShotsUpdateNextWeek"
+  },
+  {
+    "cnt": 3729,
+    "hashtag": "EXO"
+  }
+]
+```
+  
   
 
 ```
-facet -h 10.20.30.40 -i P1D -s "SELECT COUNT() as 'cnt' FROM twitterstream GROUP BY first_hashtag ORDER BY cnt DESC"
+facet -h 10.20.30.40 -i P1D -q "SELECT COUNT() as 'cnt' FROM twitterstream GROUP BY first_hashtag ORDER BY cnt DESC"
 ```
 
 
 
 ```
-facet -h 10.20.30.40 -i P1D -s "SELECT COUNT() as 'cnt' FROM twitterstream GROUP BY first_hashtag ORDER BY cnt DESC LIMIT 10"
+facet -h 10.20.30.40 -i P1D -q "SELECT COUNT() as 'cnt' FROM twitterstream GROUP BY first_hashtag ORDER BY cnt DESC LIMIT 10"
 ```

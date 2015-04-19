@@ -9,6 +9,7 @@ import path = require("path");
 import Q = require('q');
 import nopt = require("nopt");
 import chronology = require("chronology");
+
 import facet = require("facetjs");
 import $ = facet.$;
 import Expression = facet.Expression;
@@ -17,6 +18,7 @@ import ActionsExpression = facet.ActionsExpression;
 import DefAction = facet.DefAction;
 import Datum = facet.Datum;
 import Dataset = facet.Dataset;
+
 import DruidRequester = require('facetjs-druid-requester')
 import druidRequesterFactory = DruidRequester.druidRequesterFactory;
 
@@ -33,13 +35,15 @@ function usage() {
   console.log(`
 Usage: facet [options]
 
+Example: facet -h 10.20.30.40 -q "SELECT MAX(__time) AS maxTime FROM twitterstream"
+
       --help         print this help message
       --version      display the version number
   -v, --verbose      display the queries that are being made
   -h, --host         the host to connect to
   -d, --data-source  use this data source for the query (supersedes FROM clause)
   -i, --interval     add (AND) a __time filter between NOW-INTERVAL and NOW
-  -s, --sql          run this SQL query
+  -q, --query        the query to run
   -o, --output       specify the output format. Possible values: json (default), csv
 
   -a, --allow        enable a behaviour that is turned off by default
@@ -93,7 +97,7 @@ function parseArgs() {
       "host": String,
       "data-source": String,
       "help": Boolean,
-      "sql": String,
+      "query": String,
       "interval": String,
       "version": Boolean,
       "verbose": Boolean,
@@ -102,7 +106,7 @@ function parseArgs() {
     },
     {
       "h": ["--host"],
-      "s": ["--sql"],
+      "q": ["--query"],
       "v": ["--verbose"],
       "d": ["--data-source"],
       "i": ["--interval"],
@@ -157,18 +161,40 @@ export function run() {
   }
 
   // Get SQL
-  var sql: string = parsed['sql'];
+  var query: string = parsed['query'];
   var expression: Expression = null;
-  if (sql) {
-    try {
-      expression = Expression.parseSQL(sql)
-    } catch (e) {
-      console.log("Could not parse SQL");
-      console.log(e.message);
+  if (query) {
+    query = query.trim();
+    if (/^SELECT/i.test(query)) {
+      try {
+        expression = Expression.parseSQL(query);
+      } catch (e) {
+        console.log("Could not parse query as SQL:", e.message);
+        return;
+      }
+
+    } else if (query[0] === '$') {
+      try {
+        expression = Expression.parse(query);
+      } catch (e) {
+        console.log("Could not parse query as facet:", e.message);
+        return;
+      }
+
+    } else if (query[0] === '{') {
+      try {
+        expression = Expression.fromJS(JSON.parse(query));
+      } catch (e) {
+        console.log("Could not parse query as facet:", e.message);
+        return;
+      }
+
+    } else {
+      console.log("Could not determine query type (query should start with 'SELECT', '$', or '{')");
       return;
     }
   } else {
-    console.log("no query found please use --sql (-s) flag");
+    console.log("no query found please use --query (-q) flag");
     return;
   }
 
@@ -190,25 +216,27 @@ export function run() {
     requester = druidRequester;
   }
 
+  var timeAttribute = '__time';
+
   var filter: Expression = null;
   var intervalString: string = parsed['interval'];
   if (intervalString) {
     try {
       var interval = Duration.fromJS(intervalString);
     } catch (e) {
-      console.log("Could not parse interval", interval);
+      console.log("Could not parse interval", intervalString);
       console.log(e.message);
       return;
     }
 
     var now = chronology.minute.floor(new Date(), Timezone.UTC());
-    filter = $('__time').in({ start: interval.move(now, Timezone.UTC(), -1), end: now })
+    filter = $(timeAttribute).in({ start: interval.move(now, Timezone.UTC(), -1), end: now })
   }
 
   var dataset = Dataset.fromJS({
     source: 'druid',
     dataSource: dataSource,
-    timeAttribute: '__time',
+    timeAttribute: timeAttribute,
     allowEternity: allow.indexOf('eternity') !== -1,
     allowSelectQueries: allow.indexOf('select') !== -1,
     filter: filter,
