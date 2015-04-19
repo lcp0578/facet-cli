@@ -41,6 +41,6 @@
     "underscore": "~1.7.0"
   },
   "bin": {
-    "facet": "bin/facet.js"
+    "facet": "bin/facet"
   }
 }
