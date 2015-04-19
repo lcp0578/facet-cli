@@ -4,6 +4,8 @@
 /// <reference path="../node_modules/facetjs-druid-requester/build/facetjs-druid-requester.d.ts" />
 "use strict";
 
+import fs = require('fs');
+import path = require("path");
 import Q = require('q');
 import nopt = require("nopt");
 import chronology = require("chronology");
@@ -36,6 +38,7 @@ Usage: facet [options]
   -v, --verbose      display the queries that are being made
   -h, --host         the host to connect to
   -d, --data-source  use this data source for the query (supersedes FROM clause)
+  -i, --interval     add (AND) a __time filter between NOW-INTERVAL and NOW
   -s, --sql          run this SQL query
   -o, --output       specify the output format. Possible values: json (default), csv
 
@@ -47,7 +50,19 @@ Usage: facet [options]
 }
 
 function version() {
-  console.log(`facet version 0.11.1 (cli version 0.1.0 / alpha)`);
+  try {
+    var cliPackage = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+  } catch (e) {
+    console.log("could not read cli package", e.message);
+    return;
+  }
+  try {
+    var facetjsPackage = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'node_modules/facetjs/package.json'), 'utf8'));
+  } catch (e) {
+    console.log("could not read facet package", e.message);
+    return;
+  }
+  console.log(`facet version ${facetjsPackage.version} (cli version ${cliPackage.version} / alpha)`);
 }
 
 function getDatasourceName(ex: Expression): string {
@@ -117,8 +132,9 @@ export function run() {
   var parsed = parseArgs();
   if (parsed.argv.original.length === 0 || parsed['help']) return usage();
   if (parsed['version']) return version();
-  var allow: string[] = parsed['allow'] || [];
 
+  // Get allow
+  var allow: string[] = parsed['allow'] || [];
   for (var i = 0; i < allow.length; i++) {
     if (!(allow[i] === 'eternity' || allow[i] === 'select')) {
       console.log("Unexpected allow", allow[i]);
@@ -126,12 +142,21 @@ export function run() {
     }
   }
 
+  // Get output
+  var output: string = parsed['output'] || 'json';
+  if (output !== 'json') {
+    console.log("only json output is supported for now");
+    return;
+  }
+
+  // Get host
   var host: string = parsed['host'];
   if (!host) {
     console.log("must have host (for now)");
     return;
   }
 
+  // Get SQL
   var sql: string = parsed['sql'];
   var expression: Expression = null;
   if (sql) {
@@ -166,11 +191,12 @@ export function run() {
   }
 
   var filter: Expression = null;
-  if (parsed['interval']) {
+  var intervalString: string = parsed['interval'];
+  if (intervalString) {
     try {
-      var interval = Duration.fromJS(parsed['interval']);
+      var interval = Duration.fromJS(intervalString);
     } catch (e) {
-      console.log("Could not parse interval", parsed['interval']);
+      console.log("Could not parse interval", interval);
       console.log(e.message);
       return;
     }
