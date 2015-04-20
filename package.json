@@ -24,7 +24,7 @@
     "prepublish": "./prepublish"
   },
   "dependencies": {
-    "facetjs": "0.12.4",
+    "facetjs": "0.12.5",
     "facetjs-druid-requester": "1.1.x",
     "facetjs-mysql-requester": "1.1.x",
     "nopt": "^3.0.1",
