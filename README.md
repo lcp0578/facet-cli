@@ -175,6 +175,80 @@ Returns:
 Note that the grouping column was not selected but was still returned as if `TIME_BUCKET(__time, PT1H, 'Etc/UTC') as 'split'`
 was one of the select clauses.
 
+Finally let's do something advanced. Let's examine the top 5 hashtags by time. Facet SQL allows us to nest queries as
+aggregates like so:
+
+```
+facet -h 10.20.30.40 -i P1D -q "
+SELECT
+first_hashtag as hashtag,
+COUNT() as cnt,
+(
+  SELECT
+  SUM(tweet_length) as TotalTweetLength
+  GROUP BY TIME_BUCKET(__time, PT1H, 'Etc/UTC')
+  LIMIT 3    -- only get the first 3 hours to keep this example output small
+) as 'ByTime'
+FROM twitterstream
+GROUP BY first_hashtag
+ORDER BY cnt DESC
+LIMIT 5
+"
+```
+
+Returns:
+
+```json
+[
+  {
+    "hashtag": "No Hashtag",
+    "cnt": 3628171,
+    "ByTime": [
+      {
+        "TotalTweetLength": 658517,
+        "split": {
+          "start": "2015-04-19T06:00:00.000Z",
+          "end": "2015-04-19T07:00:00.000Z",
+          "type": "TIME_RANGE"
+        }
+      },
+      {
+        "TotalTweetLength": 8218030,
+        "split": {
+          "start": "2015-04-19T07:00:00.000Z",
+          "end": "2015-04-19T08:00:00.000Z",
+          "type": "TIME_RANGE"
+        }
+      },
+      {
+        "TotalTweetLength": 8480978,
+        "split": {
+          "start": "2015-04-19T08:00:00.000Z",
+          "end": "2015-04-19T09:00:00.000Z",
+          "type": "TIME_RANGE"
+        }
+      }
+    ]
+  },
+  {
+    "hashtag": "FOLLOWTRICK",
+    "cnt": 11553,
+    "ByTime": [
+      {
+        "TotalTweetLength": 5227,
+        "split": {
+          "start": "2015-04-19T06:00:00.000Z",
+          "end": "2015-04-19T07:00:00.000Z",
+          "type": "TIME_RANGE"
+        }
+      },
+      "... results omitted ..."
+    ]
+  },
+  "... results omitted ..."
+]
+```
+
 ## Issues
 
 If you find queries that you think should work but don't please open an issue on GitHub.
