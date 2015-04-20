@@ -37,7 +37,7 @@ For now the CLI can only issue Druid queries but eventually all facet supported 
 
 ## Druid example
 
-Lets imagine that your Druid broker node is located at `10.20.30.40` on the standard port (`8080`) and that there is a
+Say your Druid broker node is located at `10.20.30.40` on the standard port (`8080`) and that there is a
 datasource called `twitterstream` that has tweets in it.
 
 Here is a simple query that gets the maximum of the `__time` column which tells you what how up to date the data in the database is.
@@ -80,7 +80,7 @@ This will throw an error because there is no time filter specified and the facet
 This behaviour can be disabled using the `--allow eternity` flag but it is generally bad idea to do it when working with
 large amounts of data as it can issue computationally prohibitive queries.
   
-Let's try it again, with a time filter:
+Try it again, with a time filter:
   
 ```
 facet -h 10.20.30.40 -q "
@@ -175,7 +175,7 @@ Returns:
 Note that the grouping column was not selected but was still returned as if `TIME_BUCKET(__time, PT1H, 'Etc/UTC') as 'split'`
 was one of the select clauses.
 
-Finally let's do something advanced. Let's examine the top 5 hashtags by time. Facet SQL allows us to nest queries as
+Here is an advanced example that gets the top 5 hashtags by time. fSQL allows us to nest queries as
 aggregates like so:
 
 ```
@@ -248,6 +248,14 @@ Returns:
   "... results omitted ..."
 ]
 ```
+
+## Roadmap
+
+Here is a list of features that is not currently supported but is planned on being added soon:
+
+* Sub-queries in where clauses
+* JOINs
+* Window functions
 
 ## Issues
 
