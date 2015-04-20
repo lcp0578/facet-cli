@@ -17,21 +17,16 @@
     "url": "http://github.com/facetjs/facet-cli.git"
   },
   "main": "build/cli.js",
-  "typescript": {
-    "definition": "build/cli.d.ts"
-  },
   "scripts": {
     "prepublish": "./prepublish"
   },
   "dependencies": {
+    "chronology": "0.7.x",
     "facetjs": "0.12.5",
     "facetjs-druid-requester": "1.1.x",
     "facetjs-mysql-requester": "1.1.x",
     "nopt": "^3.0.1",
     "q": "^1.1.2"
-  },
-  "peerDependencies": {
-    "chronology": "0.7.x"
   },
   "devDependencies": {
     "chai": "~1.10.0",
