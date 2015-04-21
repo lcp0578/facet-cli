@@ -251,12 +251,23 @@ Returns:
 
 ## Roadmap
 
-Here is a list of features that is not currently supported but is planned on being added soon:
+Here is a list of features that is not currently supported that are in the works:
 
-* Sub-queries in where clauses
-* JOINs
+* Different outputs like CSV, TSV, etc.
+* Time parting - like MySQL's [DAYOFWEEK](https://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_dayofweek) and friends
+* Query simulation - preview the queries that will be run without running them
+* Expressions within aggregate functions - `SUM(price + tax)`
+* Sub-queries in WHERE clauses  
+* JOIN support
+* DESCRIBE queries to introspect tables
 * Window functions
+
+## Anti-roadmap
+
+Modification queries such as INSERT, UPDATE, CREATE, e.t.c. will not ever be supported.
+Since this is a wrapper around facet it is intended that only selection (and introspection) functionality is exposed.
+This functionality might need to live in its own CLI. 
 
 ## Issues
 
-If you find queries that you think should work but don't please open an issue on GitHub.
+If you find queries that you think should work but don't please open an [issue on GitHub](https://github.com/facetjs/facet-cli/issues).
