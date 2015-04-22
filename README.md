@@ -73,6 +73,7 @@ WHERE '2015-04-15T00:00:00' <= __time AND __time < '2015-04-16T00:00:00'
 GROUP BY first_hashtag
 ORDER BY cnt DESC
 LIMIT 5
+"
 ```
 
 This will throw an error because there is no time filter specified and the facet-cli guards against this.
@@ -175,6 +176,39 @@ Returns:
 Note that the grouping column was not selected but was still returned as if `TIME_BUCKET(__time, PT1H, 'Etc/UTC') as 'split'`
 was one of the select clauses.
 
+Time parting is also supported, here is an example:
+
+```
+facet -h 10.20.30.40 -i P1W -q "
+SELECT
+TIME_PART(__time, HOUR_OF_DAY, 'Etc/UTC') as HourOfDay,
+SUM(tweet_length) as TotalTweetLength
+FROM twitterstream
+GROUP BY TIME_PART(__time, HOUR_OF_DAY, 'Etc/UTC')
+ORDER BY TotalTweetLength DESC
+LIMIT 3
+"
+```
+
+Returns:
+
+```json
+[
+  {
+    "HourOfDay": 14,
+    "TotalTweetLength": 115983429
+  },
+  {
+    "HourOfDay": 13,
+    "TotalTweetLength": 111398041
+  },
+  {
+    "HourOfDay": 15,
+    "TotalTweetLength": 106998577
+  }
+]
+```
+
 Here is an advanced example that gets the top 5 hashtags by time. fSQL allows us to nest queries as
 aggregates like so:
 
@@ -254,7 +288,6 @@ Returns:
 Here is a list of features that is not currently supported that are in the works:
 
 * Different outputs like CSV, TSV, etc.
-* Time parting - like MySQL's [DAYOFWEEK](https://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_dayofweek) and friends
 * Query simulation - preview the queries that will be run without running them
 * Expressions within aggregate functions - `SUM(price + tax)`
 * Sub-queries in WHERE clauses  

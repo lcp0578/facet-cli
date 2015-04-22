@@ -115,12 +115,15 @@ function parseArgs() {
 function wrapVerbose(requester: Requester.FacetRequester<any>): Requester.FacetRequester<any> {
   return (request: Requester.DatabaseRequest<any>): Q.Promise<any> => {
     console.log("vvvvvvvvvvvvvvvvvvvvvvvvvv");
-    console.log("Sending query:", JSON.stringify(request.query, null, 2));
+    console.log("Sending query:");
+    console.log(JSON.stringify(request.query, null, 2));
     console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^");
+    var srartTime = Date.now();
     return requester(request)
       .then((data) => {
         console.log("vvvvvvvvvvvvvvvvvvvvvvvvvv");
-        console.log("Got result:", JSON.stringify(data, null, 2));
+        console.log(`Got result: (in ${Date.now() - srartTime}ms)`);
+        console.log(JSON.stringify(data, null, 2));
         console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^");
         return data;
       });
