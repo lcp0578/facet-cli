@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "chronology": "0.7.x",
-    "facetjs": "0.12.5",
+    "facetjs": "0.12.7",
     "facetjs-druid-requester": "1.1.x",
     "facetjs-mysql-requester": "1.1.x",
     "nopt": "^3.0.1",

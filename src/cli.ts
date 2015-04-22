@@ -53,7 +53,7 @@ Example: facet -h 10.20.30.40 -q "SELECT MAX(__time) AS maxTime FROM twitterstre
   )
 }
 
-function version() {
+function version(): void {
   var cliPackageFilename = path.join(__dirname, '..', 'package.json');
   try {
     var cliPackage = JSON.parse(fs.readFileSync(cliPackageFilename, 'utf8'));
@@ -61,16 +61,7 @@ function version() {
     console.log("could not read cli package", e.message);
     return;
   }
-
-  var facetjsPackageFilename = path.join(__dirname, '..', 'node_modules/facetjs/package.json');
-  try {
-    var facetjsPackage = JSON.parse(fs.readFileSync(facetjsPackageFilename, 'utf8'));
-  } catch (e) {
-    console.log("could not read facet package", e.message);
-    return;
-  }
-
-  console.log(`facet-cli version ${cliPackage.version} [alpha] (facetjs version ${facetjsPackage.version})`);
+  console.log(`facet-cli version ${cliPackage.version} [alpha] (facetjs version ${facet.version})`);
 }
 
 function getDatasourceName(ex: Expression): string {
