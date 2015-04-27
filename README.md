@@ -25,10 +25,12 @@ Option                | Description
 `-v`, `--verbose`     | display the queries that are being made
 `-h`, `--host`        | the host to connect to
 `-d`, `--data-source` | use this data source for the query (supersedes FROM clause)
-`-i`, `--interval`    | add (AND) a __time filter between NOW-INTERVAL and NOW
+`-i`, `--interval`    | add (AND) a `__time` filter between NOW-INTERVAL and NOW
 `-q`, `--query`       | the query to run
-`-o`, `--output`      | specify the output format. Possible values: `json` **(default)**, `csv`
+`-o`, `--output`      | specify the output format. Possible values: `json` **(default)**, `csv`, `tsv`, `flat`
 `-a`, `--allow`       | enable a behaviour that is turned off by default `eternity` allow queries not filtered on time `select` allow select queries
+`-r`, `--retry`       | the number of tries a query should be attempted on error, 0 = unlimited, (default: 2)
+`-c`, `--concurrent`  | the limit of concurrent queries that could be made simultaneously, 0 = unlimited, (default: 2)
 
 ## Examples
 

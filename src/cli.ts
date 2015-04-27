@@ -18,6 +18,7 @@ import ActionsExpression = facet.ActionsExpression;
 import DefAction = facet.DefAction;
 import Datum = facet.Datum;
 import Dataset = facet.Dataset;
+import NativeDataset = facet.NativeDataset;
 
 import DruidRequester = require('facetjs-druid-requester')
 import druidRequesterFactory = DruidRequester.druidRequesterFactory;
@@ -44,7 +45,10 @@ Example: facet -h 10.20.30.40 -q "SELECT MAX(__time) AS maxTime FROM twitterstre
   -d, --data-source  use this data source for the query (supersedes FROM clause)
   -i, --interval     add (AND) a __time filter between NOW-INTERVAL and NOW
   -q, --query        the query to run
-  -o, --output       specify the output format. Possible values: json (default), csv
+  -o, --output       the output format. Possible values: json (default), csv, tsv, flat
+  -r, --retry        the number of tries a query should be attempted on error, 0 = unlimited, (default: 2)
+  -c, --concurrent   the limit of concurrent queries that could be made simultaneously, 0 = unlimited, (default: 2)
+  -o, --output
 
   -a, --allow        enable a behaviour that is turned off by default
           eternity     allow queries not filtered on time
@@ -96,6 +100,8 @@ function parseArgs() {
       "interval": String,
       "version": Boolean,
       "verbose": Boolean,
+      "retry": Number,
+      "concurrent": Number,
       "output": String,
       "allow": [String, Array]
     },
@@ -106,26 +112,54 @@ function parseArgs() {
       "d": ["--data-source"],
       "i": ["--interval"],
       "a": ["--allow"],
+      "r": ["--retry"],
+      "c": ["--concurrent"],
       "o": ["--output"]
     },
     process.argv
   );
 }
 
-function wrapVerbose(requester: Requester.FacetRequester<any>): Requester.FacetRequester<any> {
-  return (request: Requester.DatabaseRequest<any>): Q.Promise<any> => {
+interface VerboseRequesterParameters<T> {
+  requester: Requester.FacetRequester<T>;
+  preQuery?: (query: any) => void;
+  onSuccess?: (data: any, time: number, query: any) => void;
+  onError?: (error: Error, time: number, query: any) => void;
+}
+
+function verboseRequesterFactory<T>(parameters: VerboseRequesterParameters<T>): Requester.FacetRequester<any> {
+  var requester = parameters.requester;
+
+  var preQuery = parameters.preQuery || ((query: any): void => {
     console.log("vvvvvvvvvvvvvvvvvvvvvvvvvv");
     console.log("Sending query:");
-    console.log(JSON.stringify(request.query, null, 2));
+    console.log(JSON.stringify(query, null, 2));
     console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^");
-    var srartTime = Date.now();
+  });
+
+  var onSuccess = parameters.onSuccess || ((data: any, time: number, query: any): void => {
+    console.log("vvvvvvvvvvvvvvvvvvvvvvvvvv");
+    console.log(`Got result: (in ${time}ms)`);
+    console.log(JSON.stringify(data, null, 2));
+    console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^");
+  });
+
+  var onError = parameters.onError || ((error: Error, time: number, query: any): void => {
+    console.log("vvvvvvvvvvvvvvvvvvvvvvvvvv");
+    console.log(`Got error: ${error.message} (in ${time}ms)`);
+    console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^");
+  });
+
+  return (request: Requester.DatabaseRequest<any>): Q.Promise<any> => {
+    preQuery(request.query);
+    var startTime = Date.now();
     return requester(request)
       .then((data) => {
-        console.log("vvvvvvvvvvvvvvvvvvvvvvvvvv");
-        console.log(`Got result: (in ${Date.now() - srartTime}ms)`);
-        console.log(JSON.stringify(data, null, 2));
-        console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^");
+        onSuccess(data, Date.now() - startTime, request.query);
         return data;
+      }, (error) => {
+        onError(error, Date.now() - startTime, request.query);
+        throw error;
       });
   }
 }
@@ -145,9 +179,9 @@ export function run() {
   }
 
   // Get output
-  var output: string = parsed['output'] || 'json';
-  if (output !== 'json') {
-    console.log("only json output is supported for now");
+  var output: string = (parsed['output'] || 'json').toLowerCase();
+  if (output !== 'json' && output !== 'csv' && output !== 'tsv' && output !== 'flat') {
+    console.log(`output must be one of json, csv, tsv, or flat (is ${output}})`);
     return;
   }
 
@@ -202,16 +236,35 @@ export function run() {
     return;
   }
 
-  var druidRequester = druidRequesterFactory({
+  var requester: Requester.FacetRequester<any>;
+  requester = druidRequesterFactory({
     host: host,
     timeout: 30000
   });
 
-  var requester: Requester.FacetRequester<any>;
-  if (parsed['verbose']) {
-    requester = wrapVerbose(druidRequester);
-  } else {
-    requester = druidRequester;
+  var retry: number = parsed.hasOwnProperty('retry') ? parsed['retry'] : 2;
+  if (retry > 0) {
+    requester = facet.Helper.retryRequesterFactory({
+      requester: requester,
+      retry: retry,
+      delay: 500,
+      retryOnTimeout: false
+    });
+  }
+
+  var verbose: boolean = parsed['verbose'];
+  if (verbose) {
+    requester = verboseRequesterFactory({
+      requester: requester
+    });
+  }
+
+  var concurrent: number = parsed.hasOwnProperty('concurrent') ? parsed['concurrent'] : 2;
+  if (concurrent > 0) {
+    requester = facet.Helper.concurrentLimitRequesterFactory({
+      requester: requester,
+      limit: concurrent
+    });
   }
 
   var timeAttribute = '__time';
@@ -246,11 +299,33 @@ export function run() {
 
   expression.compute(context)
     .then(
-      (data: any) => {
-        console.log(JSON.stringify(data, null, 2));
+      (data: NativeDataset) => {
+        var outputStr: string;
+        switch (output) {
+          case 'json':
+            outputStr = JSON.stringify(data, null, 2);
+            break;
+
+          case 'csv':
+            outputStr = data.toCSV();
+            break;
+
+          case 'tsv':
+            outputStr = data.toTSV();
+            break;
+
+          case 'flat':
+            outputStr = JSON.stringify(data.flatten().data, null, 2);
+            break;
+
+          default:
+            outputStr = 'Unknown output type';
+            break;
+        }
+        console.log(outputStr);
       },
       (err: Error) => {
-        console.log("There was an error getting the data:", err.message);
+        console.log(`There was an error getting the data: ${err.message}`);
       }
     ).done()
 }
