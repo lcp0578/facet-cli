@@ -120,50 +120,6 @@ function parseArgs() {
   );
 }
 
-interface VerboseRequesterParameters<T> {
-  requester: Requester.FacetRequester<T>;
-  preQuery?: (query: any) => void;
-  onSuccess?: (data: any, time: number, query: any) => void;
-  onError?: (error: Error, time: number, query: any) => void;
-}
-
-function verboseRequesterFactory<T>(parameters: VerboseRequesterParameters<T>): Requester.FacetRequester<any> {
-  var requester = parameters.requester;
-
-  var preQuery = parameters.preQuery || ((query: any): void => {
-    console.log("vvvvvvvvvvvvvvvvvvvvvvvvvv");
-    console.log("Sending query:");
-    console.log(JSON.stringify(query, null, 2));
-    console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^");
-  });
-
-  var onSuccess = parameters.onSuccess || ((data: any, time: number, query: any): void => {
-    console.log("vvvvvvvvvvvvvvvvvvvvvvvvvv");
-    console.log(`Got result: (in ${time}ms)`);
-    console.log(JSON.stringify(data, null, 2));
-    console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^");
-  });
-
-  var onError = parameters.onError || ((error: Error, time: number, query: any): void => {
-    console.log("vvvvvvvvvvvvvvvvvvvvvvvvvv");
-    console.log(`Got error: ${error.message} (in ${time}ms)`);
-    console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^");
-  });
-
-  return (request: Requester.DatabaseRequest<any>): Q.Promise<any> => {
-    preQuery(request.query);
-    var startTime = Date.now();
-    return requester(request)
-      .then((data) => {
-        onSuccess(data, Date.now() - startTime, request.query);
-        return data;
-      }, (error) => {
-        onError(error, Date.now() - startTime, request.query);
-        throw error;
-      });
-  }
-}
-
 export function run() {
   var parsed = parseArgs();
   if (parsed.argv.original.length === 0 || parsed['help']) return usage();
@@ -254,7 +210,7 @@ export function run() {
 
   var verbose: boolean = parsed['verbose'];
   if (verbose) {
-    requester = verboseRequesterFactory({
+    requester = facet.Helper.verboseRequesterFactory({
       requester: requester
     });
   }
@@ -263,7 +219,7 @@ export function run() {
   if (concurrent > 0) {
     requester = facet.Helper.concurrentLimitRequesterFactory({
       requester: requester,
-      limit: concurrent
+      concurrentLimit: concurrent
     });
   }
 
