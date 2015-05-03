@@ -22,14 +22,14 @@
   },
   "dependencies": {
     "chronology": "0.7.x",
-    "facetjs": "0.14.5",
+    "facetjs": "0.14.6",
     "facetjs-druid-requester": "1.1.x",
     "facetjs-mysql-requester": "1.1.x",
     "nopt": "^3.0.1",
     "q": "^1.1.2"
   },
   "devDependencies": {
-    "chai": "~1.10.0",
+    "chai": "~2.3.0",
     "coffee-script": "1.9.0",
     "mocha": "~2.1.x",
     "typescript": "~1.4.x",
