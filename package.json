@@ -1,6 +1,6 @@
 {
   "name": "facet-cli",
-  "version": "0.2.12",
+  "version": "0.2.13",
   "description": "Command Line Interface for facetjs",
   "keywords": [
     "comand line interface",
