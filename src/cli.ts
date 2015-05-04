@@ -124,6 +124,7 @@ export function run() {
   var parsed = parseArgs();
   if (parsed.argv.original.length === 0 || parsed['help']) return usage();
   if (parsed['version']) return version();
+  var verbose: boolean = parsed['verbose'];
 
   // Get allow
   var allow: string[] = parsed['allow'] || [];
@@ -186,6 +187,12 @@ export function run() {
     return;
   }
 
+  if (verbose) {
+    console.log('Parsed query as the following facet expression (as JSON):');
+    console.log(JSON.stringify(expression, null, 2));
+    console.log('---------------------------');
+  }
+
   var dataSource = getDatasourceName(expression);
   if (!dataSource) {
     console.log("must have data source");
@@ -208,7 +215,6 @@ export function run() {
     });
   }
 
-  var verbose: boolean = parsed['verbose'];
   if (verbose) {
     requester = facet.Helper.verboseRequesterFactory({
       requester: requester
