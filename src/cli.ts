@@ -70,7 +70,7 @@ function version(): void {
 
 function getDatasourceName(ex: Expression): string {
   var name: string = null;
-  ex.some((ex) => {
+  ex.some(ex => {
     if (ex instanceof ActionsExpression) {
       var operand = ex.operand;
       var firstAction = ex.actions[0];
@@ -127,10 +127,10 @@ export function run() {
   var verbose: boolean = parsed['verbose'];
 
   // Get allow
-  var allow: string[] = parsed['allow'] || [];
-  for (var i = 0; i < allow.length; i++) {
-    if (!(allow[i] === 'eternity' || allow[i] === 'select')) {
-      console.log("Unexpected allow", allow[i]);
+  var allows: string[] = parsed['allow'] || [];
+  for (let allow of allows) {
+    if (!(allow === 'eternity' || allow === 'select')) {
+      console.log("Unexpected allow", allow);
       return;
     }
   }
