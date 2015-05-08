@@ -65,7 +65,7 @@ function version(): void {
     console.log("could not read cli package", e.message);
     return;
   }
-  console.log(`facet-cli version ${cliPackage.version} [alpha] (facetjs version ${facet.version})`);
+  console.log(`facet-cli version ${cliPackage.version} [beta] (facetjs version ${facet.version})`);
 }
 
 function getDatasourceName(ex: Expression): string {
@@ -250,8 +250,8 @@ export function run() {
     source: 'druid',
     dataSource: dataSource,
     timeAttribute: timeAttribute,
-    allowEternity: allow.indexOf('eternity') !== -1,
-    allowSelectQueries: allow.indexOf('select') !== -1,
+    allowEternity: allows.indexOf('eternity') !== -1,
+    allowSelectQueries: allows.indexOf('select') !== -1,
     filter: filter,
     requester: requester
   });
