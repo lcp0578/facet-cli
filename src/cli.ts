@@ -29,8 +29,8 @@ if (!WallTime.rules) {
   WallTime.init(tzData.rules, tzData.zones);
 }
 
-var Duration = chronology.Duration;
 var Timezone = chronology.Timezone;
+var TimeRange = chronology.TimeRange;
 
 function usage() {
   console.log(`
@@ -235,15 +235,15 @@ export function run() {
   var intervalString: string = parsed['interval'];
   if (intervalString) {
     try {
-      var interval = Duration.fromJS(intervalString);
+      var interval = TimeRange.fromString(intervalString);
     } catch (e) {
       console.log("Could not parse interval", intervalString);
       console.log(e.message);
       return;
     }
 
-    var now = chronology.minute.floor(new Date(), Timezone.UTC());
-    filter = $(timeAttribute).in({ start: interval.move(now, Timezone.UTC(), -1), end: now })
+    let [start, end] = interval.evaluate(Timezone.UTC);
+    filter = $(timeAttribute).in({ start, end });
   }
 
   var dataset = Dataset.fromJS({
