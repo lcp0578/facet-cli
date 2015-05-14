@@ -38,21 +38,23 @@ Usage: facet [options]
 
 Example: facet -h 10.20.30.40 -q "SELECT MAX(__time) AS maxTime FROM twitterstream"
 
-      --help         print this help message
-      --version      display the version number
-  -v, --verbose      display the queries that are being made
-  -h, --host         the host to connect to
-  -d, --data-source  use this data source for the query (supersedes FROM clause)
-  -i, --interval     add (AND) a __time filter between NOW-INTERVAL and NOW
-  -q, --query        the query to run
-  -o, --output       the output format. Possible values: json (default), csv, tsv, flat
-  -r, --retry        the number of tries a query should be attempted on error, 0 = unlimited, (default: 2)
-  -c, --concurrent   the limit of concurrent queries that could be made simultaneously, 0 = unlimited, (default: 2)
-  -o, --output
+       --help         print this help message
+       --version      display the version number
+  -v,  --verbose      display the queries that are being made
+  -h,  --host         the host to connect to
+  -d,  --data-source  use this data source for the query (supersedes FROM clause)
+  -i,  --interval     add (AND) a __time filter between NOW-INTERVAL and NOW
+  -q,  --query        the query to run
+  -o,  --output       the output format. Possible values: json (default), csv, tsv, flat
+  -r,  --retry        the number of tries a query should be attempted on error, 0 = unlimited, (default: 2)
+  -c,  --concurrent   the limit of concurrent queries that could be made simultaneously, 0 = unlimited, (default: 2)
 
-  -a, --allow        enable a behaviour that is turned off by default
-          eternity     allow queries not filtered on time
-          select       allow select queries
+  -fu, --force-unique     force a column to be interpreted as a hyperLogLog uniques
+  -fh, --force-histogram  force a column to be interpreted as an approximate histogram
+
+  -a,  --allow        enable a behaviour that is turned off by default
+           eternity     allow queries not filtered on time
+           select       allow select queries
 `
   )
 }
@@ -103,7 +105,9 @@ function parseArgs() {
       "retry": Number,
       "concurrent": Number,
       "output": String,
-      "allow": [String, Array]
+      "allow": [String, Array],
+      "force-unique": [String, Array],
+      "force-histogram": [String, Array]
     },
     {
       "h": ["--host"],
@@ -114,7 +118,9 @@ function parseArgs() {
       "a": ["--allow"],
       "r": ["--retry"],
       "c": ["--concurrent"],
-      "o": ["--output"]
+      "o": ["--output"],
+      "fu": ["--force-unique"],
+      "fh": ["--force-histogram"]
     },
     process.argv
   );
@@ -133,6 +139,17 @@ export function run() {
       console.log("Unexpected allow", allow);
       return;
     }
+  }
+
+  // Get forced attribute overrides
+  var attributeOverrides: facet.AttributeJSs = {};
+  var forceUnique: string[] = parsed['force-unique'] || [];
+  for (let attributeName of forceUnique) {
+    attributeOverrides[attributeName] = { special: 'unique' };
+  }
+  var forceHistogram: string[] = parsed['force-histogram'] || [];
+  for (let attributeName of forceHistogram) {
+    attributeOverrides[attributeName] = { special: 'histogram' };
   }
 
   // Get output
@@ -248,12 +265,13 @@ export function run() {
 
   var dataset = Dataset.fromJS({
     source: 'druid',
-    dataSource: dataSource,
-    timeAttribute: timeAttribute,
+    dataSource,
+    timeAttribute,
     allowEternity: allows.indexOf('eternity') !== -1,
     allowSelectQueries: allows.indexOf('select') !== -1,
-    filter: filter,
-    requester: requester
+    filter,
+    requester,
+    attributeOverrides
   });
 
   var context: Datum = {};
